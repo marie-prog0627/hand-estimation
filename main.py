@@ -38,6 +38,7 @@ try:
 
         color_image = np.asanyarray(color_frame.get_data())
         depth_image = np.asanyarray(depth_frame.get_data())
+
         # Depth画像前処理(1m以内を画像化)  
         grey_color = 0
         # 3colors array
@@ -51,26 +52,45 @@ try:
         depth_image_3d = cv2.bilateralFilter(depth_image_3d, filter_range, delta_color, delta_distance)
 
         bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
-
-        #canny edge
+        
+        #canny edge　やらない。
         depth_max = 100
         depth_min = 90
         bg_grayscale = cv2.cvtColor(bg_removed, cv2.COLOR_BGR2GRAY)
-        bg_edge = cv2.Canny(bg_grayscale, depth_min, depth_max)
+        #bg_edge = cv2.Canny(bg_grayscale, depth_min, depth_max)
+
+        neiborhood8 = np.array([[255, 255, 255],
+                                [255, 255, 255],
+                                [255, 255, 255]],
+                                np.uint8)
+
+        #bg_edge_close = cv2.morphologyEx(bg_edge, cv2.MORPH_CLOSE, neiborhood8)
+        #bg_edge_close = cv2.dilate(bg_edge, neiborhood8, 1)
         
         #opencvの認識できるエッジの形に変換
-        ret,thresh = cv2.threshold(bg_edge,127,255,0)
-        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-
-        for cnt in contours:
-            approx = cv2.approxPolyDP(cnt, 0.1*cv2.arcLength(cnt, True), True)
-            cv2.drawContours(color_image, [approx], 0, (255), 2)
+        ret,thresh = cv2.threshold(bg_grayscale,10,255,0)
+        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
         
+        
+        # マスク作成, マスク
+        blank = np.zeros((depth_image.shape[0], depth_image.shape[1], 3))
+
+        for i in range(len(contours)):
+            approx = cv2.approxPolyDP(contours[i], 0.001*cv2.arcLength(contours[i], True), True)
+            cv2.drawContours(blank, [approx], 0, (255, 255, 255), -1)
+        
+        blank = np.float32(blank)
+        blank_grayscale = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
+        ret, hand = cv2.threshold(blank_grayscale,127,255,0)
+
+        depth_image = depth_image * (hand / np.max(hand))
+
+        # depth map
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
 
         # レンダリング
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
         images = np.hstack((bg_removed, depth_colormap))
-        cv2.imshow('RealSense', color_image)
+        cv2.imshow('RealSense', images)
         if cv2.waitKey(1) & 0xff == 27:
             break
 
