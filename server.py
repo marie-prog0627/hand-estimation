@@ -8,8 +8,9 @@ __version__ = "1.0.0"
 import argparse
 import json
 import time
-from estimation import discriminator
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from estimation import discriminator
 
 
 class MyHandler(BaseHTTPRequestHandler):
@@ -17,7 +18,7 @@ class MyHandler(BaseHTTPRequestHandler):
     Received the request as json, send the response as json
     please you edit the your processing
     """
-
+    global realsense
     def do_POST(self):
         try:
             content_len = int(self.headers.get('content-length'))
@@ -25,11 +26,8 @@ class MyHandler(BaseHTTPRequestHandler):
 
             print(requestBody)
 
-            timestump = time.time()
+            response = realsense.detect()
 
-            response = {'status': 200,
-                        'result': timestump
-                        }
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -42,8 +40,6 @@ class MyHandler(BaseHTTPRequestHandler):
             print(type(e))
             print(e.args)
             print(e)
-            response = {'status': 500,
-                        'msg': 'An error occured'}
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -69,11 +65,13 @@ def run(server_class=HTTPServer, handler_class=MyHandler, server_name='localhost
     server = server_class((server_name, port), handler_class)
     server.serve_forever()
 
-
 def main():
+    global realsense
     host, port = importargs()
     realsense = discriminator.Realsense(0.5)
+
     run(server_name=host, port=port)
+
 
 
 if __name__ == '__main__':

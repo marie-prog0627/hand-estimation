@@ -67,14 +67,16 @@ class Realsense():
 
         moment_all = cv2.moments(hand, False)
 
+        flag_right, flag_left = False, False
+        gx_right, gy_right = 0, 0
+        gx_left, gy_left = 0, 0
+
+
         if(moment_all["m00"] != 0):
             gx_all, gy_all = int(moment_all["m10"]/moment_all["m00"]) , int(moment_all["m01"]/moment_all["m00"])
 
-            cv2.circle(bg_removed, (gx_all, gy_all), 15, (255, 255, 255), thickness=-1)
-
             if(hand[gy_all][gx_all] == 255):
                 # 半分でdivideするとキメうち
-
                 if(gx_all > (hand.shape[1] / 2)):
                     flag_right, flag_left = True, False
                     gx_right, gy_right = gx_all, gy_all
@@ -105,5 +107,7 @@ class Realsense():
                                         }
                                 }
                     }
+
+        print(response)
 
         return response
