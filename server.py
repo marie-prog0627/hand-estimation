@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-__author__ = "omori"
+__author__ = "marie"
+__baseAuthor__ = "omori"
 __version__ = "1.0.0"
 
 import argparse
