@@ -77,7 +77,7 @@ class Realsense():
 
             if(hand[gy_all][gx_all] == 255):
                 # 半分でdivideするとキメうち
-                if(gx_all > (hand.shape[1] / 2)):
+                if(gx_all < (hand.shape[1] / 2)):
                     flag_right, flag_left = True, False
                     gx_right, gy_right = gx_all, gy_all
                     gx_left, gy_left = 0, 0
