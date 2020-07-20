@@ -1,3 +1,8 @@
 *.png
 test.py
 __pycache__
+haarcascades
+haarcascades_cuda
+hogcascades
+lbpcascades
+vec_files
