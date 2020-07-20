@@ -53,10 +53,11 @@ try:
 
         bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color, color_image)
         
-        #canny edge　やらない。
+
         depth_max = 100
         depth_min = 90
         bg_grayscale = cv2.cvtColor(bg_removed, cv2.COLOR_BGR2GRAY)
+        """canny edge　やらない。
         #bg_edge = cv2.Canny(bg_grayscale, depth_min, depth_max)
 
         neiborhood8 = np.array([[255, 255, 255],
@@ -66,12 +67,11 @@ try:
 
         #bg_edge_close = cv2.morphologyEx(bg_edge, cv2.MORPH_CLOSE, neiborhood8)
         #bg_edge_close = cv2.dilate(bg_edge, neiborhood8, 1)
-        
+        """
         #opencvの認識できるエッジの形に変換
         ret,thresh = cv2.threshold(bg_grayscale,10,255,0)
         contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
-        
-        
+          
         # マスク作成, マスク
         blank = np.zeros((depth_image.shape[0], depth_image.shape[1], 3))
 
@@ -82,6 +82,28 @@ try:
         blank = np.float32(blank)
         blank_grayscale = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
         ret, hand = cv2.threshold(blank_grayscale,127,255,0)
+
+        moment_all = cv2.moments(hand, False)
+
+        if(moment_all["m00"] != 0):
+            gx_all, gy_all = int(moment_all["m10"]/moment_all["m00"]) , int(moment_all["m01"]/moment_all["m00"])
+
+            cv2.circle(bg_removed, (gx_all, gy_all), 15, (255, 255, 255), thickness=-1)
+
+            if(hand[gy_all][gx_all] == 255):
+                gx, gy = gx_all, gy_all
+            else:
+                right_hand = hand[:,gx_all:]
+                left_hand = hand[:,:gx_all]
+
+                moment_right = cv2.moments(right_hand, False)
+                moment_left = cv2.moments(left_hand, False)
+
+                gx_right, gy_right = int(moment_right["m10"]/moment_right["m00"]) , int(moment_right["m01"]/moment_right["m00"])
+                gx_left, gy_left = int(moment_left["m10"]/moment_left["m00"]) , int(moment_left["m01"]/moment_left["m00"])
+
+                cv2.circle(bg_removed, (gx_all + gx_right, gy_right), 15, (255, 0, 0), thickness=-1)
+                cv2.circle(bg_removed, (gx_left, gy_left), 15, (0, 255, 0), thickness=-1)
 
         depth_image = depth_image * (hand / np.max(hand))
 
