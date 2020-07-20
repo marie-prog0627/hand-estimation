@@ -11,7 +11,7 @@ class Realsense():
 
         # ストリーミング開始
         self.pipeline = rs.pipeline()
-        self.profile = pipeline.start(self.config)
+        self.profile = self.pipeline.start(self.config)
 
         # 距離[m] = depth * depth_scale 
         self.depth_sensor = self.profile.get_device().first_depth_sensor()
@@ -30,7 +30,7 @@ class Realsense():
         color_frame = aligned_frames.get_color_frame()
         depth_frame = aligned_frames.get_depth_frame()
         if not depth_frame or not color_frame:
-            continue
+            pass
 
         color_image = np.asanyarray(color_frame.get_data())
         depth_image = np.asanyarray(depth_frame.get_data())

@@ -8,6 +8,7 @@ __version__ = "1.0.0"
 import argparse
 import json
 import time
+from estimation import discriminator
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -71,6 +72,7 @@ def run(server_class=HTTPServer, handler_class=MyHandler, server_name='localhost
 
 def main():
     host, port = importargs()
+    realsense = discriminator.Realsense(0.5)
     run(server_name=host, port=port)
 
 
