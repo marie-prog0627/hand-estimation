@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pyrealsense2 as rs
+import dlib
 
 class Realsense():
     def __init__(self, clip):
@@ -23,6 +24,28 @@ class Realsense():
         self.align_to = rs.stream.color
         self.align = rs.align(self.align_to)
 
+        # 顔認識の調整
+        self.CASCADE_PATH = "./haarcascades/"
+        self.CASCADE = cv2.CascadeClassifier(
+            self.CASCADE_PATH + "haarcascade_frontalface_default.xml")
+
+        self.LEARNED_MODEL_PATH = "./learned-models/"
+        self.PREDICTOR = dlib.shape_predictor(
+            self.LEARNED_MODEL_PATH + "shape_predictor_68_face_landmarks.dat")
+
+        # dlib detector
+        self.detector = dlib.get_frontal_face_detector()
+
+    def faceRecognition(self, gray):
+        rects = self.detector(gray, 1)
+
+        if(len(rects) != 0):
+            landmarks = [[p.x, p.y] for p in self.PREDICTOR(gray, rects[0]).parts()]
+        else:
+            landmarks = []
+
+        return landmarks
+
     def detect(self):
         # フレーム待ち(Color & Depth)
         frames = self.pipeline.wait_for_frames()
@@ -35,6 +58,11 @@ class Realsense():
         color_image = np.asanyarray(color_frame.get_data())
         depth_image = np.asanyarray(depth_frame.get_data())
 
+        # 顔認識
+        gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
+        landmarks = self.faceRecognition(gray)
+
+        # 手の認識
         grey_color = 0
         # 3colors array
         depth_image_3d = np.dstack((depth_image,depth_image,depth_image))
@@ -97,7 +125,7 @@ class Realsense():
                 gx_left, gy_left = int(moment_left["m10"]/moment_left["m00"]) , int(moment_left["m01"]/moment_left["m00"])
 
         response = {"status": 200,
-                    "result": {"right": {"flag": flag_right,
+                    "result": {"hand": {"right": {"flag": flag_right,
                                         "x": gx_right,
                                         "y": gy_right
                                         },
@@ -105,6 +133,8 @@ class Realsense():
                                         "x": gx_left,
                                         "y": gy_left
                                         }
+                                },
+                                "face": landmarks
                                 }
                     }
 
